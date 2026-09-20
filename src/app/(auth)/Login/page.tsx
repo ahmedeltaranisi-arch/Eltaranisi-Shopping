@@ -110,8 +110,8 @@ export default function Login() {
           <div className="w-full max-w-md mx-auto">
             <div className="text-center mb-8">
               <div className="text-[28px] font-bold mb-6 tracking-tight">
-                <span className="text-[#0aad0a]">Fresh</span>
-                <span className="text-[#1e293b]">Cart</span>
+                <span className="text-[#0aad0a]">Eltaranisi</span>
+                <span className="text-[#1e293b]">Shopping</span>
               </div>
               <h1 className="text-3xl font-bold text-[#1e293b] mb-3">
                 Welcome Back!
