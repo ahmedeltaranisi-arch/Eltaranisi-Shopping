@@ -2,3 +2,4 @@
 .next/
 *.rar
 node_modules/
+.vercel
