@@ -66,8 +66,8 @@ export default function Login() {
             Eltaranisi Shopping - Your One-Stop Shop for Fresh Products
           </h2>
           <p className="text-gray-500 text-center text-[15px] mb-8 max-w-md">
-            Join thousands of happy customers who trust Eltaranisi Shopping for their
-            daily grocery needs
+            Join thousands of happy customers who trust Eltaranisi Shopping for
+            their daily grocery needs
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-[13px] font-medium text-gray-600">
             <span className="flex items-center gap-1.5">
