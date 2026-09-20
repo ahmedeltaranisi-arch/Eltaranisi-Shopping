@@ -1,9 +1,12 @@
 import { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { jwtDecode } from "jwt-decode"; // لا تنسَ عمل استيراد لهذه المكتبة
+import { jwtDecode } from "jwt-decode";
 
 export const authOptions: NextAuthOptions = {
-  // 1. 👈 أضف هذا الجزء لتأكيد حفظ الجلسة في الكوكيز
+  // 👈 إضافة الـ secret هنا ضرورية جداً للعمل على Vercel بدون أخطاء
+  secret: process.env.NEXTAUTH_SECRET,
+
+  // 1. تأكيد حفظ الجلسة في الكوكيز
   session: {
     strategy: "jwt",
   },
@@ -40,7 +43,7 @@ export const authOptions: NextAuthOptions = {
 
           if (!res.ok) {
             console.log("RouteMisr Error Message:", payload.message);
-            return null; // إرجاع null يخبر NextAuth بفشل تسجيل الدخول بدون إيقاف السيرفر
+            return null;
           }
 
           if (payload.message === "success" && payload.token) {
@@ -62,55 +65,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // إضافة الكول باكس بناءً على الصور المرفقة
-  // callbacks: {
-  //   // token obj data =>
-  //   // user obj authorize
-  //   async jwt({ token, user }) {
-  //     if (user) {
-  //       token.id = user.id;
-  //       token.token = user.token; // access token
-  //     }
-  //     return token;
-  //   },
-
-  //   async session({ session, token }) {
-  //     if (token) {
-  //       session.user.id = token.id;
-  //       session.user.token = token.token as string;
-  //     }
-  //     return session;
-  //   },
-  // },
-
-  // callbacks: {
-  //   async jwt({ token, user }) {
-  //     // هذه الطباعة ستظهر في الـ Terminal (VS Code) وليس في المتصفح
-  //     console.log("🟢 JWT Callback - User exists?", !!user);
-
-  //     if (user) {
-  //       token.id = user.id;
-  //       token.token = user.token;
-  //     }
-  //     return token;
-  //   },
-
-  //   async session({ session, token }) {
-  //     console.log("🟢 Session Callback Triggered");
-
-  //     if (token) {
-  //       // حماية إضافية: نتأكد أن كائن user موجود قبل إضافة البيانات إليه
-  //       if (!session.user) {
-  //         session.user = { name: "", email: "", id: "", token: "" };
-  //       }
-
-  //       session.user.id = token.id as string;
-  //       session.user.token = token.token as string;
-  //     }
-  //     return session;
-  //   },
-  // },
-
   callbacks: {
     async jwt({ token, user }) {
       console.log("🟢 JWT Callback - User exists?", !!user);
@@ -121,7 +75,6 @@ export const authOptions: NextAuthOptions = {
         token.token = user.token;
       }
 
-      // سنطبع محتوى التوكن لنرى هل بياناتك موجودة أم ضاعت
       console.log("🟡 محتوى التوكن الحالي:", token);
       return token;
     },
@@ -137,7 +90,6 @@ export const authOptions: NextAuthOptions = {
         session.user.token = token.token as string;
       }
 
-      // سنطبع الجلسة النهائية
       console.log("🔵 الجلسة النهائية التي تذهب للمتصفح:", session);
       return session;
     },
