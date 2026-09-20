@@ -9,7 +9,6 @@ import * as zod from "zod";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { schemaLogin } from "@/app/schema/LoginSchema";
-import { userLogin } from "@/app/actions/loginAction";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { signIn } from "next-auth/react";
 
@@ -17,8 +16,6 @@ type userData = zod.infer<typeof schemaLogin>;
 
 export default function Login() {
   const router = useRouter();
-
-  // إظهار/إخفاء الباسورد
   const [showPassword, setShowPassword] = useState(false);
 
   const { control, handleSubmit } = useForm({
@@ -30,18 +27,15 @@ export default function Login() {
   });
 
   async function submitForm(data: userData) {
-    console.log(data);
-
-    // تم تطبيق اللوجيك الموجود في الصورة الخاصة بـ NextAuth
     const isLogin = await signIn("credentials", {
       ...data,
       redirect: false,
     });
 
     if (isLogin?.ok) {
-      // success , navigate
       toast.success("success Login");
       router.push("/");
+      router.refresh();
     } else {
       toast.error(
         "Incorrect email or password. Please check your credentials and try again",
@@ -52,13 +46,10 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans overflow-hidden">
       <Toaster position="top-center" reverseOrder={false} />
-
-      {/* تم تكبير العرض هنا إلى max-w-[1200px] */}
       <div className="max-w-[1200px] w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row">
-        {/* Left Side - Image and Branding */}
         <div className="hidden md:flex flex-1 flex-col justify-center items-center p-12 bg-white">
           <img
-            src="https://eltaranisishopping.codescandy.com/assets/images/svg-graphics/signin-g.svg"
+            src="https://placehold.co/600x400/0aad0a/ffffff?text=Shopping"
             alt="Shopping Cart"
             className="w-full max-w-md object-contain mb-10"
           />
@@ -115,10 +106,8 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Right Side - Form */}
         <div className="flex-1 p-8 sm:p-14 bg-white flex flex-col justify-center">
           <div className="w-full max-w-md mx-auto">
-            {/* Header */}
             <div className="text-center mb-8">
               <div className="text-[28px] font-bold mb-6 tracking-tight">
                 <span className="text-[#0aad0a]">Fresh</span>
@@ -132,7 +121,6 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Social Buttons */}
             <div className="space-y-4 mb-8">
               <button className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 bg-white rounded-lg text-[15px] font-medium text-[#1e293b] hover:bg-gray-50 transition-colors shadow-sm">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -170,9 +158,7 @@ export default function Login() {
               </span>
             </div>
 
-            {/* Input Login */}
             <form onSubmit={handleSubmit(submitForm)} className="space-y-5">
-              {/* Input Email */}
               <div>
                 <Controller
                   name="email"
@@ -213,7 +199,6 @@ export default function Login() {
                 />
               </div>
 
-              {/* Input Password */}
               <div>
                 <Controller
                   name="password"
@@ -242,11 +227,7 @@ export default function Login() {
                           type={showPassword ? "text" : "password"}
                           {...field}
                           id={field.name}
-                          className={`w-full pl-11 pr-11 py-3 text-[15px] border rounded-lg focus:ring-1 focus:ring-[#0aad0a] focus:border-[#0aad0a] ${
-                            fieldState.invalid
-                              ? "border-red-500 focus:ring-red-500"
-                              : "border-gray-300"
-                          }`}
+                          className={`w-full pl-11 pr-11 py-3 text-[15px] border rounded-lg focus:ring-1 focus:ring-[#0aad0a] focus:border-[#0aad0a] ${fieldState.invalid ? "border-red-500 focus:ring-red-500" : "border-gray-300"}`}
                           aria-invalid={fieldState.invalid}
                           placeholder="Enter your password"
                           autoComplete="on"
@@ -264,7 +245,6 @@ export default function Login() {
                           )}
                         </button>
                       </div>
-
                       {fieldState.invalid && (
                         <FieldError
                           errors={[fieldState.error]}
