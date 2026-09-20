@@ -49,7 +49,7 @@ export default function Login() {
       <div className="max-w-[1200px] w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row">
         <div className="hidden md:flex flex-1 flex-col justify-center items-center p-12 bg-white">
           <img
-            src="https://placehold.co/600x400/0aad0a/ffffff?text=Shopping"
+            src="https://freshcart.codescandy.com/assets/images/svg-graphics/signin-g.svg"
             alt="Shopping Cart"
             className="w-full max-w-md object-contain mb-10"
           />
