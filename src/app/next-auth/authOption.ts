@@ -3,18 +3,13 @@ import Credentials from "next-auth/providers/credentials";
 import { jwtDecode } from "jwt-decode";
 
 export const authOptions: NextAuthOptions = {
-  // 👈 إضافة الـ secret هنا ضرورية جداً للعمل على Vercel بدون أخطاء
   secret: process.env.NEXTAUTH_SECRET,
-
-  // 1. تأكيد حفظ الجلسة في الكوكيز
   session: {
     strategy: "jwt",
   },
-
   providers: [
     Credentials({
-      name: "My Login",
-
+      name: "Credentials",
       credentials: {
         email: {
           label: "Email",
@@ -29,8 +24,11 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log("API env:", process.env.API);
-          const res = await fetch(`${process.env.API}auth/signin`, {
+          const apiBase =
+            process.env.API || "https://ecommerce.routemisr.com/api/v1/";
+          const baseUrl = apiBase.endsWith("/") ? apiBase : `${apiBase}/`;
+
+          const res = await fetch(`${baseUrl}auth/signin`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -42,7 +40,7 @@ export const authOptions: NextAuthOptions = {
           const payload = await res.json();
 
           if (!res.ok) {
-            console.log("RouteMisr Error Message:", payload.message);
+            console.log("RouteMisr Error:", payload.message);
             return null;
           }
 
@@ -55,7 +53,6 @@ export const authOptions: NextAuthOptions = {
               token: payload.token,
             };
           }
-
           return null;
         } catch (error) {
           console.error("Authorize error:", error);
@@ -64,39 +61,26 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-
   callbacks: {
     async jwt({ token, user }) {
-      console.log("🟢 JWT Callback - User exists?", !!user);
-
       if (user) {
-        console.log("✅ لحظة تسجيل الدخول: تم حفظ البيانات في التوكن");
         token.id = user.id;
         token.token = user.token;
       }
-
-      console.log("🟡 محتوى التوكن الحالي:", token);
       return token;
     },
-
     async session({ session, token }) {
-      console.log("🟢 Session Callback Triggered");
-
       if (token) {
         if (!session.user) {
-          session.user = { name: "", email: "", id: "", token: "" };
+          session.user = { name: "", email: "", id: "", token: "" } as any;
         }
         session.user.id = token.id as string;
         session.user.token = token.token as string;
       }
-
-      console.log("🔵 الجلسة النهائية التي تذهب للمتصفح:", session);
       return session;
     },
   },
-
-  // تحديد الصفحة الخاصة بتسجيل الدخول
   pages: {
-    signIn: "/login",
+    signIn: "/Login",
   },
 };
