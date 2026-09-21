@@ -632,6 +632,68 @@ export default function OrdersPage() {
 
 /* ------------------------------ Small pieces ------------------------------- */
 
+/** زرار عرض صور الأوردر */
+function ViewImagesButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="View order images"
+      aria-label="View order images"
+      className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors shrink-0"
+    >
+      <ImageIcon className="w-4 h-4" />
+    </button>
+  );
+}
+
+/** زرار حذف الأوردر */
+function RemoveOrderButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Remove order"
+      aria-label="Remove order"
+      className="w-9 h-9 rounded-lg border border-red-200 bg-white flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+    >
+      <Trash2 className="w-4 h-4" />
+    </button>
+  );
+}
+
+/** زرار Details / Hide — بيتستخدم في الديسكتوب والموبايل */
+function DetailsToggle({
+  expanded,
+  onToggle,
+  className = "",
+}: {
+  expanded: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${className} ${
+        expanded
+          ? "bg-[#22C55E] text-white hover:bg-[#1DA851]"
+          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+      }`}
+    >
+      {expanded ? "Hide" : "Details"}
+
+      {expanded ? (
+        <ChevronUp className="w-4 h-4" />
+      ) : (
+        <ChevronDown className="w-4 h-4" />
+      )}
+    </button>
+  );
+}
+
 function Breadcrumb() {
   return (
     <nav className="flex items-center gap-2 text-xs font-semibold text-gray-500">
@@ -659,14 +721,14 @@ function Header({
   userName?: string;
 }) {
   return (
-    <div className="mt-5 mb-2 flex items-start justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-[#22C55E] flex items-center justify-center shrink-0">
-          <Archive className="w-7 h-7 text-white" />
+    <div className="mt-5 mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#22C55E] flex items-center justify-center shrink-0">
+          <Archive className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
         </div>
 
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
             My Orders
           </h1>
 
@@ -682,7 +744,7 @@ function Header({
 
       <Link
         href="/products"
-        className="flex items-center gap-2 text-sm font-bold text-[#00A550] hover:text-[#008A43] transition-colors shrink-0 pt-1"
+        className="flex items-center gap-2 text-sm font-bold text-[#00A550] hover:text-[#008A43] transition-colors shrink-0"
       >
         <ShoppingBag className="w-4 h-4" />
         Continue Shopping
@@ -725,13 +787,13 @@ function OrderCard({
           : "border border-gray-200"
       }`}
     >
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* ------------------------- Card header row ------------------------- */}
 
-        <div className="flex items-start gap-5">
+        <div className="flex items-start gap-3 sm:gap-5">
           {/* Product image + count badge */}
           <div className="relative shrink-0">
-            <div className="w-[72px] h-[72px] rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+            <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
               {firstImage ? (
                 <Image
                   src={firstImage}
@@ -739,7 +801,6 @@ function OrderCard({
                   width={72}
                   height={72}
                   className="w-full h-full object-contain"
-                 
                 />
               ) : (
                 <Package className="w-5 h-5 text-gray-300" />
@@ -747,7 +808,7 @@ function OrderCard({
             </div>
 
             {totalItems > 1 && (
-              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 min-w-[24px] h-6 px-1 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center">
                 +{totalItems}
               </span>
             )}
@@ -759,48 +820,40 @@ function OrderCard({
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${st.pill}`}
             >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${st.dot}`}
-              />
+              <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
               {st.label}
             </span>
 
             {/* Order number */}
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-sm font-semibold text-gray-400">
-                #
-              </span>
+            <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1.5">
+              <span className="text-sm font-semibold text-gray-400">#</span>
 
-              <span className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              <span className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
                 {orderNo}
               </span>
             </div>
 
-            {/* Meta row */}
-            <div className="mt-1.5 flex items-center gap-2.5 text-xs text-gray-500 flex-wrap">
-              <span className="flex items-center gap-1.5">
+            {/* Meta row — من غير نقط منفصلة عشان متكسرش على الشاشات الضيقة */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
                 {formatDate(order.createdAt)}
               </span>
 
-              <span className="text-gray-300">•</span>
-
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <Package className="w-3.5 h-3.5 text-gray-400" />
                 {totalItems} item{totalItems === 1 ? "" : "s"}
               </span>
 
-              <span className="text-gray-300">•</span>
-
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <MapPin className="w-3.5 h-3.5 text-gray-400" />
                 {addr?.city ?? "—"}
               </span>
             </div>
 
             {/* Total */}
-            <div className="mt-3">
-              <span className="text-2xl font-extrabold text-gray-900">
+            <div className="mt-2.5 sm:mt-3">
+              <span className="text-xl sm:text-2xl font-extrabold text-gray-900">
                 {formatMoney(total)}
               </span>{" "}
               <span className="text-xs font-semibold text-gray-400">
@@ -809,49 +862,29 @@ function OrderCard({
             </div>
           </div>
 
-          {/* Right controls */}
-          <div className="flex flex-col items-end justify-between gap-4 shrink-0">
-            <button
-              type="button"
-              onClick={onShowImages}
-              title="View order images"
-              aria-label="View order images"
-              className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
-            >
-              <ImageIcon className="w-4 h-4" />
-            </button>
+          {/* Right controls — ديسكتوب */}
+          <div className="hidden sm:flex flex-col items-end justify-between gap-4 shrink-0">
+            <ViewImagesButton onClick={onShowImages} />
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setExpanded((value) => !value)}
-                aria-expanded={expanded}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-                  expanded
-                    ? "bg-[#22C55E] text-white hover:bg-[#1DA851]"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                }`}
-              >
-                {expanded ? "Hide" : "Details"}
-
-                {expanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={onCancel}
-                title="Remove order"
-                aria-label="Remove order"
-                className="w-9 h-9 rounded-lg border border-red-200 bg-white flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <DetailsToggle
+                expanded={expanded}
+                onToggle={() => setExpanded((value) => !value)}
+              />
+              <RemoveOrderButton onClick={onCancel} />
             </div>
           </div>
+        </div>
+
+        {/* Controls row — موبايل: صف واحد تحت المحتوى من غير تزاحم */}
+        <div className="mt-4 flex sm:hidden items-center gap-2">
+          <DetailsToggle
+            expanded={expanded}
+            onToggle={() => setExpanded((value) => !value)}
+            className="flex-1 justify-center"
+          />
+          <ViewImagesButton onClick={onShowImages} />
+          <RemoveOrderButton onClick={onCancel} />
         </div>
 
         {/* ----------------------- Expanded details ----------------------- */}

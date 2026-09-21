@@ -583,6 +583,13 @@ function MobileMenu({
                   iconClass="bg-gray-100 text-gray-500"
                   label={userName}
                 />
+                {/* Settings → /profile/settings */}
+                <DrawerRow
+                  href="/profile/settings"
+                  Icon={Settings}
+                  iconClass="bg-gray-100 text-gray-500"
+                  label="Settings"
+                />
                 {/* Sign Out: أحمر — hover خلفية حمرا فاتحة */}
                 <DrawerRow
                   onClick={() => {
