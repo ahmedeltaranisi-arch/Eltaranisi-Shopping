@@ -346,16 +346,19 @@ export default function Register() {
                   >
                     Register Now
                   </Button>
-
-                  {/* زرار Login In — للي عنده حساب بالفعل (نفس ستايل زرار Register Now) */}
-                  <Link
-                    href="/Login"
-                    className="w-full bg-green-700 hover:bg-green-600 text-white font-medium h-[38px] rounded-md flex items-center justify-center transition-all duration-300"
-                  >
-                    Login In
-                  </Link>
                 </div>
               </form>
+
+              {/* زي تصميم صفحة Sign In: نص رمادي + لينك أخضر "Login In" لصفحة الدخول */}
+              <div className="mt-4 text-sm text-gray-500">
+                Already have an account?{" "}
+                <Link
+                  href="/Login"
+                  className="text-green-600 font-bold hover:underline"
+                >
+                  Login In
+                </Link>
+              </div>
             </div>
           </div>
         </div>
