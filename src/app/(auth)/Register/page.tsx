@@ -33,11 +33,7 @@ export default function Register() {
   });
 
   async function submitForm(data: userData) {
-    console.log(data);
-
     const result = await userRegister(data);
-
-    console.log(result);
 
     if (result.success) {
       toast.success(result.message);
