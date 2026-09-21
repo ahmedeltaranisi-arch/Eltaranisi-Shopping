@@ -9,6 +9,7 @@ import { schema } from "./../../schema/RegisterSchema";
 import * as zod from "zod";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { userRegister } from "@/app/actions/authActions";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -345,6 +346,14 @@ export default function Register() {
                   >
                     Register Now
                   </Button>
+
+                  {/* زرار Login In — للي عنده حساب بالفعل (نفس ستايل زرار Register Now) */}
+                  <Link
+                    href="/Login"
+                    className="w-full bg-green-700 hover:bg-green-600 text-white font-medium h-[38px] rounded-md flex items-center justify-center transition-all duration-300"
+                  >
+                    Login In
+                  </Link>
                 </div>
               </form>
             </div>

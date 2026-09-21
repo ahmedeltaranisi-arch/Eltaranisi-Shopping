@@ -198,8 +198,11 @@ export default function WishlistComp() {
               key={item.id}
               className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col"
             >
-              {/* الصورة */}
-              <div className="relative h-52 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center p-2 mb-3 overflow-hidden">
+              {/* الصورة — لينك لصفحة تفاصيل المنتج */}
+              <Link
+                href={`/productDetails/${item.id}`}
+                className="relative h-52 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center p-2 mb-3 overflow-hidden hover:border-green-300 transition-colors"
+              >
                 {item.image ? (
                   <Image
                     src={item.image}
@@ -211,11 +214,16 @@ export default function WishlistComp() {
                 ) : (
                   <Package className="text-gray-300" size={40} />
                 )}
-              </div>
+              </Link>
 
               {/* التفاصيل */}
               <h3 className="font-bold text-gray-800 text-sm line-clamp-1 mb-1">
-                {item.title}
+                <Link
+                  href={`/productDetails/${item.id}`}
+                  className="hover:text-green-600 transition-colors"
+                >
+                  {item.title}
+                </Link>
               </h3>
               {item.category && (
                 <span className="self-start bg-green-50 text-green-700 px-2 py-0.5 rounded-md text-[11px] font-semibold mb-2">
