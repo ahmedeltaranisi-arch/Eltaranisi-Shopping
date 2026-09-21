@@ -342,19 +342,21 @@ export default function Register() {
                   <Button
                     suppressHydrationWarning
                     type="submit"
-                    className="w-full bg-green-700 hover:bg-green-600 my-4 h-[38px] transition-all duration-300"
+                    className="w-full h-[36px] bg-[#0aad0a] hover:bg-[#088a08] text-white py-3 text-[15px] rounded-lg font-medium transition-colors my-4"
                   >
                     Register Now
                   </Button>
                 </div>
               </form>
 
-              {/* زي تصميم صفحة Sign In: نص رمادي + لينك أخضر "Login In" لصفحة الدخول */}
-              <div className="mt-4 text-sm text-gray-500">
-                Already have an account?{" "}
+              {/* زي تصميم صفحة Sign In بالظبط: نص رمادي + لينك "Login In" — والسطر في المنتصف */}
+              <div className="flex items-center justify-center">
+                <span className="text-[15px] text-gray-600">
+                  Already have an account?
+                </span>
                 <Link
                   href="/Login"
-                  className="text-green-600 font-bold hover:underline"
+                  className="font-medium m-1.5 text-[#0aad0a] hover:underline"
                 >
                   Login In
                 </Link>
