@@ -1,5 +1,18 @@
-.env*.local
-.next/
-*.rar
+# dependencies
 node_modules/
+
+# next.js
+.next/
+out/
+build/
+
+# env — أي ملف env ما يتنشرش بالغلط (استخدم .env.example كقالب)
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.rar
+*.tsbuildinfo
 .vercel

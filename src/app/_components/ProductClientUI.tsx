@@ -4,7 +4,7 @@ import React, { useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { prodType } from "@/app/interface/products";
+import { prodType } from "@/types/products";
 import {
   ShoppingCart,
   Zap,
@@ -130,10 +130,10 @@ export default function ProductClientUI({ product, relatedProducts }: Props) {
           href="/products"
           className="hover:text-[#14171A] transition-colors"
         >
-          Women's Fashion
+          Women&apos;s Fashion
         </Link>
         <span>›</span>
-        <span>Women's Clothing</span>
+        <span>Women&apos;s Clothing</span>
         <span>›</span>
         <span className="text-[#14171A]">{product.title}</span>
       </nav>
@@ -161,7 +161,7 @@ export default function ProductClientUI({ product, relatedProducts }: Props) {
                 alt={product.title}
                 fill
                 className="object-contain"
-                unoptimized
+               
               />
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ProductClientUI({ product, relatedProducts }: Props) {
                   alt={`Thumb ${idx}`}
                   fill
                   className="object-contain p-2"
-                  unoptimized
+                 
                 />
               </button>
             ))}
@@ -627,7 +627,7 @@ export default function ProductClientUI({ product, relatedProducts }: Props) {
                     alt={item.title}
                     fill
                     className="object-contain mix-blend-multiply p-4"
-                    unoptimized
+                   
                   />
                 </Link>
 

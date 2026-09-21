@@ -1,7 +1,8 @@
 import React from "react";
+import { API_V1 } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
-import { prodType } from "@/app/interface/products";
+import { prodType } from "@/types/products";
 import { Repeat, Eye, Star, ShoppingCart } from "lucide-react";
 import AddBtn from "@/app/_components/AddBtn/AddBtn";
 import { WishlistHeart } from "@/app/_components/WishlistControls/WishlistControls";
@@ -9,7 +10,7 @@ import { WishlistHeart } from "@/app/_components/WishlistControls/WishlistContro
 export default async function CardOne() {
   async function getProducts(): Promise<prodType[] | null> {
     const response = await fetch(
-      `https://ecommerce.routemisr.com/api/v1/products`,
+      `${API_V1}/products`,
       {
         next: { revalidate: 3600 },
       },
@@ -114,7 +115,7 @@ export default async function CardOne() {
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         className="object-contain p-6"
-                        unoptimized
+                       
                       />
                     </div>
                   </Link>

@@ -14,7 +14,6 @@ import {
   changeMyPassword,
   getStoredUser,
   setStoredUser,
-  setStoredToken,
 } from "@/app/_apis/profile.api";
 
 const phoneRegex = /^01[0125][0-9]{8}$/;
@@ -197,17 +196,17 @@ export default function SettingsPage() {
       try {
         const res = await verifyToken();
         if (!alive) return;
-        const d = res?.decoded ?? {};
-        const rawRole = String(d.role ?? "user");
+        const d = res?.decoded;
+        const rawRole = String(d?.role ?? "user");
         setAccount({
-          id: d.id ?? d._id ?? "",
+          id: d?.id ?? "",
           role: rawRole.charAt(0).toUpperCase() + rawRole.slice(1),
         });
         const current = getProfileValues();
         resetProfile({
-          name: current.name || d.name || "",
-          email: current.email || d.email || "",
-          phone: current.phone || d.phone || "",
+          name: current.name || d?.name || "",
+          email: current.email || d?.email || "",
+          phone: current.phone || d?.phone || "",
         });
       } catch {
         /* نتجاهل — الفورم يفضل بالقيم المخزنة */
@@ -234,15 +233,14 @@ export default function SettingsPage() {
     }
   }
 
-  // PUT /users/changeMyPassword — بيرجع توكن جديد بنحدّثه في userData
+  // PUT /users/changeMyPassword
   async function onChangePassword(values: PasswordValues) {
     try {
-      const res = await changeMyPassword({
+      await changeMyPassword({
         currentPassword: values.currentPassword,
         password: values.password,
         rePassword: values.rePassword,
       });
-      if (res?.token) setStoredToken(res.token);
       resetPassword();
       setReveal({ current: false, next: false, confirm: false });
       toast.success("Password changed successfully");

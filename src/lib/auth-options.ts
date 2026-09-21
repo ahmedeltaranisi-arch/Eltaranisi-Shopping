@@ -1,6 +1,13 @@
 import { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { jwtDecode } from "jwt-decode";
+import { API_V1, serverFetch } from "@/lib/api";
+
+type SigninPayload = {
+  message?: string;
+  token?: string;
+  user?: { email: string; name: string };
+};
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -24,27 +31,15 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          const apiBase =
-            process.env.API || "https://ecommerce.routemisr.com/api/v1/";
-          const baseUrl = apiBase.endsWith("/") ? apiBase : `${apiBase}/`;
-
-          const res = await fetch(`${baseUrl}auth/signin`, {
+          const payload = await serverFetch<SigninPayload>(`${API_V1}/auth/signin`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            body: {
               email: credentials?.email,
               password: credentials?.password,
-            }),
+            },
           });
 
-          const payload = await res.json();
-
-          if (!res.ok) {
-            console.log("RouteMisr Error:", payload.message);
-            return null;
-          }
-
-          if (payload.message === "success" && payload.token) {
+          if (payload.message === "success" && payload.token && payload.user) {
             const userData: { id: string } = jwtDecode(payload.token);
             return {
               id: userData.id,
@@ -72,10 +67,15 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         if (!session.user) {
-          session.user = { name: "", email: "", id: "", token: "" } as any;
+          session.user = {
+            name: "",
+            email: "",
+            id: "",
+            token: "",
+          };
         }
-        session.user.id = token.id as string;
-        session.user.token = token.token as string;
+        session.user.id = (token.id as string) ?? "";
+        session.user.token = (token.token as string) ?? "";
       }
       return session;
     },

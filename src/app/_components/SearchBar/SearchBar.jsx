@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { API_V1 } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, PackageSearch } from "lucide-react";
 
@@ -9,7 +11,7 @@ import { Search, Loader2, PackageSearch } from "lucide-react";
    فبنبحث محلياً على الجهاز بدل ما نعتمد عليه */
 async function fetchAllProducts() {
   const first = await fetch(
-    "https://ecommerce.routemisr.com/api/v1/products?limit=50",
+    `${API_V1}/products?limit=50`,
   ).then((r) => r.json());
 
   const pages = first?.metadata?.numberOfPages ?? 1;
@@ -17,7 +19,7 @@ async function fetchAllProducts() {
   for (let p = 2; p <= pages; p++) {
     restPromises.push(
       fetch(
-        `https://ecommerce.routemisr.com/api/v1/products?limit=50&page=${p}`,
+        `${API_V1}/products?limit=50&page=${p}`,
       ).then((r) => r.json()),
     );
   }
@@ -155,9 +157,12 @@ export default function SearchBar() {
                       onClick={() => go(p._id)}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition-colors text-left cursor-pointer"
                     >
-                      <img
+                      <Image
                         src={p.imageCover}
                         alt={p.title}
+                        width={40}
+                        height={40}
+                       
                         className="w-10 h-10 object-contain rounded-md bg-gray-50 border border-gray-100 p-1 shrink-0"
                       />
                       <div className="flex-1 min-w-0">

@@ -6,7 +6,7 @@ import Navbar from "./_components/Navbar/Navbar";
 import { Toaster } from "react-hot-toast";
 import MyProvider from "./_components/Provider/MyProvider";
 import AOSProvider from "./AOS/AOSProvider";
-import Footer from '../Footer/page';
+import Footer from "@/components/Footer";
 import Providers from "./_components/TanStackProvider/TanStackProvider";
 // استدعاء مزود AOS الذي قمنا بإنشائه
 
@@ -16,12 +16,22 @@ const exo = Exo({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Eltaranisi Shopping",
-  description: "Website Shoping",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Eltaranisi Shopping",
+    template: "%s | Eltaranisi Shopping",
+  },
+  description:
+    "Eltaranisi Shopping — your one-stop shop for fashion, electronics and more. Free shipping across Egypt.",
   icons: {
-    icon: "/cart.svg", 
-    apple: "/apple-icon.png", 
+    icon: "/cart.svg",
+  },
+  openGraph: {
+    siteName: "Eltaranisi Shopping",
+    type: "website",
   },
 };
 

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+const protectedPaths = [
+  "/cart",
+  "/wishlist",
+  "/checkout",
+  "/orders",
+  "/profile",
+  "/brands",
+];
+const authPaths = ["/login", "/register"];
+
 export async function middleware(req: NextRequest) {
-  const protectedPages = [
-    "/brands",
-    "/Cart",
-    "/cart",
-    "/wishlist",
-    "/wishList",
-    "/checkout",
-    "/orders",
-    "/profile",
-  ];
-  const authPages = ["/Login", "/Register"];
-  const pathName = req.nextUrl.pathname;
+  const pathName = req.nextUrl.pathname.toLowerCase();
 
   const myToken = await getToken({
     req: req,
@@ -24,11 +23,11 @@ export async function middleware(req: NextRequest) {
 
   if (
     !accessToken &&
-    protectedPages.some((path) => pathName.startsWith(path))
+    protectedPaths.some((path) => pathName.startsWith(path))
   ) {
     return NextResponse.redirect(new URL("/Login", req.nextUrl));
   }
-  if (accessToken && authPages.some((path) => pathName.startsWith(path))) {
+  if (accessToken && authPaths.some((path) => pathName.startsWith(path))) {
     return NextResponse.redirect(new URL("/", req.nextUrl));
   }
   return NextResponse.next();
@@ -39,6 +38,7 @@ export const config = {
     "/Cart/:path*",
     "/cart/:path*",
     "/wishlist/:path*",
+    "/wishList/:path*",
     "/Login/:path*",
     "/Register/:path*",
     "/brands/:path*",

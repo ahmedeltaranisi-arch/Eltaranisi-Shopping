@@ -20,6 +20,7 @@ import {
 } from "react-icons/fa6";
 import eltaranisiLogo from "@/assets/images/Eltaranisi.png";
 import Image from "next/image";
+import { getCategories } from "@/services/categories";
 
 /**
  * Footer — كل الروابط اشتغلت بمسارات حقيقية موجودة في المشروع:
@@ -33,13 +34,29 @@ import Image from "next/image";
  *   متحوّلة على أقرب صفحة موجودة (معظمها /contact) لحد ما تتعمل —
  *   معلّمين بـ 🔜 عند كل واحد
  */
-export default function Footer() {
-  // 🔗 التصنيفات السريعة — IDs حقيقية من GET /api/v1/categories
-  const quickCategories = {
+export default async function Footer() {
+  // 🔗 التصنيفات السريعة — IDs حقيقية من GET /api/v1/categories (كـ fallback)
+  const fallbackCategories = {
     electronics: "6439d2d167d9aa4ca970649f",
     mensFashion: "6439d5b90049ad0b52b90048",
     womensFashion: "6439d58a0049ad0b52b9003f",
   };
+  let categoryLinks = [
+    { label: "Electronics", href: `/categories/${fallbackCategories.electronics}` },
+    { label: "Men's Fashion", href: `/categories/${fallbackCategories.mensFashion}` },
+    { label: "Women's Fashion", href: `/categories/${fallbackCategories.womensFashion}` },
+  ];
+  // الأفضل: التصنيفات تيجي ديناميك من الـ API — والفallback لو الـ API وقع
+  try {
+    const cats = await getCategories();
+    if (cats.length > 0) {
+      categoryLinks = cats
+        .slice(0, 3)
+        .map((c) => ({ label: c.name, href: `/categories/${c._id}` }));
+    }
+  } catch {
+    /* الـ API وقع — نفضل على اللينكات الثابتة */
+  }
 
   const featureBanner = [
     {
@@ -72,18 +89,7 @@ export default function Footer() {
     { label: "All Products", href: "/products" },
     { label: "Categories", href: "/categories" },
     { label: "Brands", href: "/brands" },
-    {
-      label: "Electronics",
-      href: `/categories/${quickCategories.electronics}`,
-    },
-    {
-      label: "Men's Fashion",
-      href: `/categories/${quickCategories.mensFashion}`,
-    },
-    {
-      label: "Women's Fashion",
-      href: `/categories/${quickCategories.womensFashion}`,
-    },
+    ...categoryLinks,
   ];
 
   const accountLinks = [

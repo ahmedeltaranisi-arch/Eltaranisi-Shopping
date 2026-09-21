@@ -110,9 +110,9 @@ export default function NotFound() {
             Oops! Nothing Here
           </h1>
           <p className="text-slate-500 text-lg md:text-xl mb-10 font-medium">
-            Looks like this page went out of stock! Don't worry,
+            Looks like this page went out of stock! Don&apos;t worry,
             <br className="hidden md:block" />
-            there's plenty more fresh content to explore.
+            there&apos;s plenty more fresh content to explore.
           </p>
 
           {/* الأزرار (Go to Homepage / Go Back) */}

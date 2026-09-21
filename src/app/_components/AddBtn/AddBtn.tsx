@@ -17,24 +17,23 @@ export default function AddBtn({
 
   const { mutate, isPending } = useMutation({
     mutationFn: addToCart,
-    onSuccess: (data) => {
-      if (
-        data?.status === "success" ||
-        data?.message === "Product added successfully to your cart"
-      ) {
-        toast.success(data?.message || "Product added successfully");
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(res.message || "Product added successfully");
 
         // 🔑🔑 أهم سطر في الملف:
         // نمسح كاش السلة عشان أي صفحة بتستخدم queryKey: ["getCart"]
         // (زي صفحة الـ Cart) تجيب البيانات الجديدة فوراً
         queryClient.invalidateQueries({ queryKey: ["getCart"] });
+      } else if (res.status === 401) {
+        toast.error("Please log in to add items to your cart");
       } else {
-        toast.error(data?.message || "Something went wrong");
+        toast.error(res.message || "Something went wrong");
       }
     },
-    onError: (error: any) => {
-      toast.error("Please log in to add items to your cart");
-      console.error("🔴 Error adding to cart:", error);
+    onError: (error: Error) => {
+      toast.error(error.message || "Something went wrong");
+      console.error("Error adding to cart:", error);
     },
   });
 

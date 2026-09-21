@@ -1,7 +1,8 @@
 import Image from "next/image";
+import { API_V1 } from "@/lib/api";
 import Link from "next/link";
 import { Tag, ArrowRight } from "lucide-react";
-import { brandType } from '@/services/types/brandType';
+import { brandType } from '@/types/brand';
 
 /*
   ⚠️ مهم: الـ API بيقفل على 50 عنصر في الصفحة الواحدة (limit=50 هو الأقصى)
@@ -14,7 +15,7 @@ async function getAllBrands(): Promise<brandType[]> {
 
   while (hasMore) {
     const response = await fetch(
-      `https://ecommerce.routemisr.com/api/v1/brands?page=${page}&limit=50`,
+      `${API_V1}/brands?page=${page}&limit=50`,
       { next: { revalidate: 3600 } },
     );
     if (!response.ok) {
@@ -40,8 +41,8 @@ export default async function Brands() {
 
   try {
     brands = await getAllBrands();
-  } catch (err: any) {
-    errorMsg = err?.message ?? "حدث خطأ غير متوقع";
+  } catch (err) {
+    errorMsg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
   }
 
   const fontStyle = {
@@ -116,7 +117,7 @@ export default async function Brands() {
                   height={160}
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16.6vw"
                   className="w-full h-full object-contain"
-                  unoptimized
+                 
                 />
               </div>
 

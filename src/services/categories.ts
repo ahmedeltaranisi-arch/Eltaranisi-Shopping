@@ -1,7 +1,8 @@
-import { CategoryType, SubcategoryType } from "@/app/interface/categories";
-import { prodType } from "@/app/interface/products";
+import { CategoryType, SubcategoryType } from "@/types/categories";
+import { API_V1 } from "@/lib/api";
+import { prodType } from "@/types/products";
 
-const BASE = "https://ecommerce.routemisr.com/api/v1";
+const BASE = `${API_V1}`;
 
 /** جلب كل التصنيفات الرئيسية */
 export async function getCategories(): Promise<CategoryType[]> {

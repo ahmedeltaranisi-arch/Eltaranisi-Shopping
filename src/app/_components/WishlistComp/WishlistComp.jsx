@@ -35,11 +35,17 @@ export default function WishlistComp() {
   const removeItem = useMutation({
     mutationFn: removeFromWishlist,
     onSuccess: (res) => {
-      toast.success(res?.message || "Product removed from your wishlist");
+      if (res?.success) {
+        toast.success(res.message || "Product removed from your wishlist");
+      } else if (res?.status === 401) {
+        toast.error("Please log in to manage your wishlist");
+      } else {
+        toast.error(res?.message || "Something went wrong");
+      }
     },
     onError: (e) => {
-      toast.error("Please log in to manage your wishlist");
-      console.error("🔴 Error removing from wishlist:", e);
+      toast.error(e?.message || "Something went wrong");
+      console.error("Error removing from wishlist:", e);
     },
     onSettled: () => {
       setConfirm(null);
@@ -51,24 +57,27 @@ export default function WishlistComp() {
   const moveToCart = useMutation({
     mutationFn: addToCart,
     onSuccess: (res) => {
-      if (
-        res?.status === "success" ||
-        res?.message === "Product added successfully to your cart"
-      ) {
-        toast.success(res?.message || "Product added to your cart");
+      if (res?.success) {
+        toast.success(res.message || "Product added to your cart");
         queryClient.invalidateQueries({ queryKey: ["getCart"] });
+      } else if (res?.status === 401) {
+        toast.error("Please log in to add items to your cart");
       } else {
         toast.error(res?.message || "Something went wrong");
       }
     },
     onError: (e) => {
-      toast.error("Please log in to add items to your cart");
-      console.error("🔴 Error adding to cart:", e);
+      toast.error(e?.message || "Something went wrong");
+      console.error("Error adding to cart:", e);
     },
   });
 
   /* ① لو مش مسجل دخول */
-  if (error?.status === 401 || /unauthorized/i.test(error?.message || "")) {
+  if (
+    data?.status === "unauthorized" ||
+    error?.status === 401 ||
+    /unauthorized/i.test(error?.message || "")
+  ) {
     return (
       <div className="max-w-[1600px] mx-auto px-6 py-20 flex flex-col items-center text-center min-h-[50vh]">
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">

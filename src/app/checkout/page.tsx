@@ -38,9 +38,10 @@ import {
   ShoppingBag,
   Truck,
 } from "lucide-react";
+import { apiFetch, HttpError } from "@/lib/api-client";
 
-const API_V1 = "https://ecommerce.routemisr.com/api/v1";
-const API_V2 = "https://ecommerce.routemisr.com/api/v2";
+const API_V1 = "/api/ext/v1";
+const API_V2 = "/api/ext/v2";
 
 /* ---------------------------------- Types ---------------------------------- */
 
@@ -69,91 +70,55 @@ type FieldErrors = { city?: string; street?: string; phone?: string };
 
 /* --------------------------------- Helpers --------------------------------- */
 
-/*
-  بنمسح localStorage كله عن التوكن (أي JWT يبدأ بـ eyJ)
-  عشان ما نبقاش معتمدين على اسم الـ key اللي كل حفظ فيه
-*/
-function looksLikeJwt(value: string): boolean {
-  return /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/.test(value);
-}
+/** شكل الـ response اللي بيرجعه الـ API (مرن — الحقول المهمة معرّفة) */
+type ApiBody = {
+  data?: unknown;
+  user?: unknown;
+  message?: string;
+  errors?: { msg?: string }[];
+  session?: { url?: string };
+};
 
-function cleanTokenValue(raw: string | null): string {
-  if (!raw) return "";
-  // لو التوكن اتحفظ JSON.stringify'd جواه اقتباسات → بننضّفها
-  return raw.trim().replace(/^"(.*)"$/s, "$1").trim();
-}
+type RawProduct = {
+  id?: string;
+  _id?: string;
+  title?: string;
+  imageCover?: string;
+  images?: (string | { url?: string })[];
+  price?: number;
+  priceAfterDiscount?: number;
+};
 
-function getStoredToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  // 1) الـ keys المعتادة أولًا
-  const preferredKeys = ["token", "authToken", "userToken", "jwt", "accessToken"];
-  for (const key of preferredKeys) {
-    const value = cleanTokenValue(localStorage.getItem(key));
-    if (looksLikeJwt(value)) return value;
-  }
-
-  // 2) لو التوكن محفوظ جوه object (زي { user: ..., token: ... })
-  for (const key of ["user", "userInfo", "userData", "currentUser", "auth"]) {
-    const raw = localStorage.getItem(key);
-    if (!raw) continue;
-    try {
-      const parsed = JSON.parse(raw);
-      for (const candidate of [parsed?.token, parsed?.user?.token, parsed?.data?.token]) {
-        if (typeof candidate === "string" && looksLikeJwt(candidate.trim())) {
-          return candidate.trim();
-        }
-      }
-    } catch {
-      /* مش JSON — ignore */
-    }
-  }
-
-  // 3) أخيرًا: أول قيمة تشبه JWT في أي key داخل localStorage
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key) continue;
-    const value = cleanTokenValue(localStorage.getItem(key));
-    if (looksLikeJwt(value)) return value;
-  }
-
-  return null;
-}
+type RawCartItem = {
+  product?: RawProduct;
+  count?: number;
+  quantity?: number;
+  price?: number;
+  _id?: string;
+};
 
 /*
-  الـ app بتكلم الـ API بهيدر `token` (زي صفحة الكارت بالظبط)
-  وبنبعث Authorization: Bearer كمان كـ fallback
+  كل النداءات بتم عن طريق البروكسي الآمن /api/ext — التوكن بيتحط على السيرفر
+  ومش محتاجين نبعته من المتصفح (ولا نخزنه في localStorage).
 */
-async function fetchJson(
-  url: string,
-  options: RequestInit = {},
-  token: string | null,
-) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || !payload) {
-    const message =
-      payload?.message ?? payload?.errors?.[0]?.msg ?? `Request failed (${response.status})`;
-    const error = new Error(message);
+async function fetchJson(url: string, options: RequestInit = {}): Promise<ApiBody> {
+  try {
+    // "/api/ext/v1/..." ← بنبعت المسار من غير prefix بتاع البروكسي
+    return await apiFetch<ApiBody>(url.replace(/^\/api\/ext\//, ""), options);
+  } catch (err) {
     // 401 = التوكن منتهي أو مرفوض → بنستخدمها في شاشة "سجّل الدخول تاني"
-    if (response.status === 401) error.name = "UnauthorizedError";
-    throw error;
+    if (err instanceof HttpError && err.status === 401) {
+      err.name = "UnauthorizedError";
+    }
+    throw err;
   }
-  return payload;
 }
 
 /* ----------------------------- Fetch the user ----------------------------- */
 
-async function fetchUser(token: string): Promise<Record<string, unknown> | null> {
-  const payload = await fetchJson(`${API_V1}/users/getMe`, {}, token);
-  return (payload?.data ?? payload?.user ?? null) as Record<string, unknown>;
+async function fetchUser(): Promise<Record<string, unknown> | null> {
+  const payload = await fetchJson(`${API_V1}/users/getMe`);
+  return ((payload?.data ?? payload?.user ?? null) as Record<string, unknown> | null);
 }
 
 /*
@@ -163,7 +128,6 @@ async function fetchUser(token: string): Promise<Record<string, unknown> | null>
 */
 async function fetchAddresses(
   user: Record<string, unknown> | null,
-  token: string,
 ): Promise<AddressType[]> {
   if (Array.isArray(user?.addresses) && user.addresses.length > 0) {
     return user.addresses as AddressType[];
@@ -172,7 +136,7 @@ async function fetchAddresses(
     return [user.address as AddressType];
   }
   try {
-    const payload = await fetchJson(`${API_V1}/addresses`, {}, token);
+    const payload = await fetchJson(`${API_V1}/addresses`);
     const list = payload?.data ?? [];
     return Array.isArray(list) ? (list as AddressType[]) : [];
   } catch {
@@ -186,19 +150,19 @@ async function fetchAddresses(
   الكارت: بنجرب v1 الأول (نفس رزمة الـ app) وبعده v2
   والـ normalize بيتعامل مع الاتنين مع بعض (item.count / item.quantity, product.id / product._id)
 */
-function normalizeCart(cart: Record<string, any>) {
+function normalizeCart(cart: Record<string, unknown>) {
   // ⚠️ في الـ API ده:
   //   v1 cart → العناصر تحت key "products"
   //   v2 cart → العناصر تحت key "items"
   // فبنقري الاتنين عشان أي نسخة ترجع نجيبها صح
-  const rawItems: any[] = Array.isArray(cart?.products)
-    ? (cart.products as any[])
+  const rawItems: RawCartItem[] = Array.isArray(cart?.products)
+    ? (cart.products as RawCartItem[])
     : Array.isArray(cart?.items)
-      ? (cart.items as any[])
+      ? (cart.items as RawCartItem[])
       : [];
   const items: CartItemType[] = rawItems
     .map((item) => {
-      const p = item?.product ?? item ?? {};
+      const p: RawProduct = item?.product ?? (item as RawProduct) ?? {};
       return {
         id: String(p?.id ?? p?._id ?? item?._id ?? ""),
         title: p?.title ?? "Product",
@@ -216,19 +180,13 @@ function normalizeCart(cart: Record<string, any>) {
   return { cartId: String(cart?.id ?? cart?._id ?? ""), items };
 }
 
-async function fetchCart(
-  token: string,
-): Promise<{ cartId: string; items: CartItemType[] }> {
+async function fetchCart(): Promise<{ cartId: string; items: CartItemType[] }> {
   let lastError: unknown = null;
   let firstGood: { cartId: string; items: CartItemType[] } | null = null;
   for (const base of [API_V1, API_V2]) {
     try {
-      const payload = await fetchJson(`${base}/cart`, {}, token);
-      const cart = (payload?.data ?? payload) as Record<string, any>;
-      console.log(
-        `[checkout] cart response (${base}):`,
-        JSON.stringify(cart, null, 2),
-      );
+      const payload = await fetchJson(`${base}/cart`);
+      const cart = (payload?.data ?? payload) as Record<string, unknown>;
       const normalized = normalizeCart(cart);
       // أول رد ناجح بنحفظه (حتى لو فاضي → "Your cart is empty")
       if (!firstGood) firstGood = normalized;
@@ -281,48 +239,30 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   /*
-    🔑 نفس صفحة الكارت بالظبط: التوكن من NextAuth session
-    ولو مفيش session → fallback لمسح localStorage عن أي JWT
+    🔑 الجلسة هي مصدر الحقيقة الوحيد — التوكن بيتحط على السيرفر عن طريق
+    البروكسي الآمن ومش بيتحفظ في المتصفح.
   */
-  const { data: session, status } = useSession();
-  const s: Record<string, any> | null =
-    (session as unknown as Record<string, any>) ?? null;
-  const sessionToken: string | null =
-    s?.accessToken ?? s?.user?.token ?? s?.user?.accessToken ?? s?.user?.jwt ?? null;
-
-  function resolveToken(): string | null {
-    if (typeof sessionToken === "string" && sessionToken.trim()) {
-      return sessionToken.trim();
-    }
-    return getStoredToken();
-  }
+  const { status } = useSession();
 
   const useNewAddress = selectedAddressKey === "new";
 
   /* -------------------------------- Loading -------------------------------- */
   useEffect(() => {
-    // بنستنى next-auth يخلص تحميل الـ session (زي صفحة الكارت)
+    // بنستنى next-auth يخلص تحميل الـ session
     if (status === "loading") return;
 
     let cancelled = false;
 
     async function load() {
-      const token = resolveToken();
-      console.log(
-        "[checkout] load start — token:",
-        token ? `found (${token.slice(0, 15)}…)` : "NONE → login screen",
-      );
-      // لو مفيش توكن → شاشة "سجّل الدخول الأول" بزرار للوجين
-      if (!token) {
+      // لو مفيش جلسة → شاشة "سجّل الدخول الأول" بزرار للوجين
+      if (status === "unauthenticated") {
         setAuthIssue("missing");
+        setLoading(false);
         return;
       }
       try {
-        const [user, cart] = await Promise.all([
-          fetchUser(token),
-          fetchCart(token),
-        ]);
-        const savedAddresses = await fetchAddresses(user, token);
+        const [user, cart] = await Promise.all([fetchUser(), fetchCart()]);
+        const savedAddresses = await fetchAddresses(user);
         if (cancelled) return;
         setUserName(String(user?.name ?? ""));
         setAddresses(savedAddresses);
@@ -331,7 +271,7 @@ export default function CheckoutPage() {
       } catch (err) {
         if (cancelled) return;
         console.error("[checkout] load failed:", err);
-        // لو التوكن منتهي/مرفوض (401) → شاشة "سجّل الدخول تاني"
+        // لو الجلسة منتهية/مرفوضة (401) → شاشة "سجّل الدخول تاني"
         if (err instanceof Error && err.name === "UnauthorizedError") {
           setAuthIssue("expired");
           return;
@@ -348,7 +288,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, status, sessionToken]);
+  }, [status]);
 
   /* -------------------------------- Totals --------------------------------- */
   const totalItems = useMemo(
@@ -398,11 +338,21 @@ export default function CheckoutPage() {
   function buildShippingAddress() {
     if (!useNewAddress) {
       const a = addresses.find((ad) => addressKey(ad) === selectedAddressKey);
+      // العنوان المختار مش موجود (نداء قديم مثلاً) → نستخدم المكتوب في الفورم
+      if (!a) {
+        return {
+          name: userName,
+          phone: phone.trim(),
+          city: city.trim(),
+          details: street.trim(),
+          address: street.trim(),
+        };
+      }
       const details = addressDetails(a);
       return {
-        name: a?.name ?? "",
-        phone: a?.phone ?? "",
-        city: a?.city ?? "",
+        name: a.name ?? "",
+        phone: a.phone ?? "",
+        city: a.city ?? "",
         details,
         address: details, // نبعث الاتنين عشان الـ API بيتقبل الشكلين
       };
@@ -420,7 +370,6 @@ export default function CheckoutPage() {
   async function handleSubmit() {
     setSubmitError(null);
     if (!validateForm()) return;
-    const token = resolveToken();
     setSubmitting(true);
 
     try {
@@ -436,12 +385,11 @@ export default function CheckoutPage() {
             method: "POST",
             body: JSON.stringify({ shippingAddress: buildShippingAddress() }),
           },
-          token,
         );
 
         // نمسح الكارت — لو فشل مبيوقفش الـ redirect
         try {
-          await fetchJson(`${API_V1}/cart`, { method: "DELETE" }, token);
+          await fetchJson(`${API_V1}/cart`, { method: "DELETE" });
         } catch {
           /* ignore */
         }
@@ -455,10 +403,11 @@ export default function CheckoutPage() {
             window.location.origin,
           )}`,
           { method: "POST" },
-          token,
         );
         const sessionUrl =
-          payload?.session?.url ?? payload?.data?.session?.url;
+          payload?.session?.url ??
+          (payload?.data as { session?: { url?: string } } | undefined)?.session
+            ?.url;
         if (!sessionUrl) {
           throw new Error("Payment session was not found in the response.");
         }
@@ -1008,7 +957,7 @@ export default function CheckoutPage() {
                           width={40}
                           height={40}
                           className="w-full h-full object-contain p-0.5"
-                          unoptimized
+                         
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -1025,7 +974,7 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <span className="text-sm font-bold text-gray-900 shrink-0">
-                      {formatMoney(it.unitPrice)}
+                      {formatMoney(it.unitPrice * it.count)}
                     </span>
                   </div>
                 ))}

@@ -7,7 +7,7 @@ export const schema = zod
       .string()
       .nonempty("Name is required")
       .min(3, "Min 3 letters (e.g., Alex)")
-      .max(15, "Max 15 letters"),
+      .max(50, "Max 50 letters"),
 
     // Email
     email: zod
@@ -41,3 +41,5 @@ export const schema = zod
     path: ["rePassword"],
     message: "Passwords do not match",
   });
+
+export type userData = zod.infer<typeof schema>;

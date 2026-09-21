@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_V1 = "https://ecommerce.routemisr.com/api/v1";
+const API_V1 = "/api/ext/v1";
 
 /*
   إخفاء الأوردرات محليًا باستخدام localStorage.
@@ -104,110 +104,24 @@ type StatusInfo = {
 
 /* --------------------------------- Helpers --------------------------------- */
 
-function looksLikeJwt(value: string): boolean {
-  return /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/.test(
-    value,
-  );
-}
-
-function cleanTokenValue(raw: string | null): string {
-  if (!raw) return "";
-
-  return raw.trim().replace(/^"(.*)"$/s, "$1").trim();
-}
-
-function getStoredToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  const preferredKeys = [
-    "token",
-    "authToken",
-    "userToken",
-    "jwt",
-    "accessToken",
-  ];
-
-  for (const key of preferredKeys) {
-    const value = cleanTokenValue(localStorage.getItem(key));
-
-    if (looksLikeJwt(value)) {
-      return value;
-    }
-  }
-
-  for (const key of [
-    "user",
-    "userInfo",
-    "userData",
-    "currentUser",
-    "auth",
-  ]) {
-    const raw = localStorage.getItem(key);
-
-    if (!raw) continue;
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      for (const candidate of [
-        parsed?.token,
-        parsed?.user?.token,
-        parsed?.data?.token,
-      ]) {
-        if (
-          typeof candidate === "string" &&
-          looksLikeJwt(candidate.trim())
-        ) {
-          return candidate.trim();
-        }
-      }
-    } catch {
-      // تجاهل القيم غير الصالحة كـ JSON.
-    }
-  }
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-
-    if (!key) continue;
-
-    const value = cleanTokenValue(localStorage.getItem(key));
-
-    if (looksLikeJwt(value)) {
-      return value;
-    }
-  }
-
-  return null;
-}
-
-async function fetchJson(
-  url: string,
-  options: RequestInit = {},
-  token: string | null,
-) {
-  const headers = new Headers(options.headers);
-
-  if (!headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (token) {
-    headers.set("token", token);
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await fetch(url, {
+/*
+  كل النداءات بتم عن طريق البروكسي الآمن /api/ext — التوكن بيتحط على السيرفر
+  ومش بيتحفظ في المتصفح.
+*/
+async function fetchJson(url: string, options: RequestInit = {}) {
+  const response = await fetch(`/api/ext/${url.replace(/^\/api\/ext\//, "")}`, {
     ...options,
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
   });
 
   const payload = await response.json().catch(() => null);
 
   if (!response.ok || !payload) {
     const message =
-      payload?.message ??
-      payload?.errors?.[0]?.msg ??
+      (payload as { message?: string } | null)?.message ??
       `Request failed (${response.status})`;
 
     const error = new Error(message);
@@ -222,10 +136,8 @@ async function fetchJson(
   return payload;
 }
 
-async function fetchMyOrders(
-  token: string,
-): Promise<{ orders: Order[]; userName: string }> {
-  const me = await fetchJson(`${API_V1}/users/getMe`, {}, token);
+async function fetchMyOrders(): Promise<{ orders: Order[]; userName: string }> {
+  const me = await fetchJson(`${API_V1}/users/getMe`);
 
   const user = me?.data ?? me?.user;
   const userId = String(user?._id ?? user?.id ?? "");
@@ -237,25 +149,16 @@ async function fetchMyOrders(
   let payload;
 
   try {
-    payload = await fetchJson(
-      `${API_V1}/orders/user/${userId}`,
-      {},
-      token,
-    );
+    payload = await fetchJson(`${API_V1}/orders/user/${userId}`);
   } catch (err) {
-    if (
-      err instanceof Error &&
-      err.name === "UnauthorizedError"
-    ) {
+    if (err instanceof Error && err.name === "UnauthorizedError") {
       throw err;
     }
 
-    payload = await fetchJson(`${API_V1}/orders`, {}, token);
+    payload = await fetchJson(`${API_V1}/orders`);
   }
 
-  const list = Array.isArray(payload)
-    ? payload
-    : (payload?.data ?? []);
+  const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
   const orders: Order[] = Array.isArray(list) ? list : [];
 
@@ -383,23 +286,7 @@ export default function OrdersPage() {
     null,
   );
 
-  const { data: session, status } = useSession();
-
-  const authSession = session as unknown as {
-    accessToken?: string;
-    user?: {
-      token?: string;
-      accessToken?: string;
-      jwt?: string;
-    };
-  } | null;
-
-  const sessionToken =
-    authSession?.accessToken ??
-    authSession?.user?.token ??
-    authSession?.user?.accessToken ??
-    authSession?.user?.jwt ??
-    null;
+  const { status } = useSession();
 
   function requestCancel(id: string) {
     setCancelTarget(
@@ -431,20 +318,15 @@ export default function OrdersPage() {
       setLoadError(null);
       setAuthIssue(null);
 
-      const token =
-        typeof sessionToken === "string" && sessionToken.trim()
-          ? sessionToken.trim()
-          : getStoredToken();
-
-      if (!token) {
+      // مفيش جلسة → شاشة "سجل الدخول الأول"
+      if (status === "unauthenticated") {
         setAuthIssue("missing");
         setLoading(false);
         return;
       }
 
       try {
-        const { orders: list, userName: name } =
-          await fetchMyOrders(token);
+        const { orders: list, userName: name } = await fetchMyOrders();
 
         if (cancelled) return;
 
@@ -484,7 +366,7 @@ export default function OrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [status, sessionToken]);
+  }, [status]);
 
   const fontStyle = {
     fontFamily: "var(--font-exo), 'Exo', 'Exo Fallback', sans-serif",
@@ -682,7 +564,7 @@ export default function OrdersPage() {
                         width={300}
                         height={300}
                         className="w-full h-full object-contain p-2"
-                        unoptimized
+                       
                       />
                     ) : (
                       <Package className="w-5 h-5 text-gray-300" />
@@ -857,7 +739,7 @@ function OrderCard({
                   width={72}
                   height={72}
                   className="w-full h-full object-contain"
-                  unoptimized
+                 
                 />
               ) : (
                 <Package className="w-5 h-5 text-gray-300" />
@@ -1027,7 +909,7 @@ function OrderCard({
                             width={44}
                             height={44}
                             className="w-full h-full object-contain"
-                            unoptimized
+                           
                           />
                         ) : (
                           <Package className="w-4 h-4 text-gray-300" />

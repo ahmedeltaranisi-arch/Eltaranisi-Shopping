@@ -1,33 +1,38 @@
 "use server";
 
-import { getTokenFun } from "@/utilites/getTokenDate";
+import { getTokenFun } from "@/lib/server-token";
+import { API_V1, ApiError, serverFetch } from "@/lib/api";
+import type { ActionResult } from "@/app/actions/cartActions/addToCart";
 
-export async function addToWishlist(prodId: string) {
+export async function addToWishlist(prodId: string): Promise<ActionResult> {
+  if (typeof prodId !== "string" || !prodId.trim()) {
+    return { success: false, message: "Invalid product id", status: 400 };
+  }
+
   const token = await getTokenFun();
   if (!token) {
-    throw new Error("Unauthorized");
+    return { success: false, message: "Please log in first", status: 401 };
   }
 
   try {
-    const response = await fetch(
-      `https://ecommerce.routemisr.com/api/v1/wishlist`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          productId: prodId,
-        }),
-        headers: {
-          token: token as string,
-          "Content-type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) throw new Error("Unauthorized");
-
-    const payload = await response.json();
-    return payload;
-  } catch (error) {
-    throw new Error("Unauthorized");
+    const payload = await serverFetch<Record<string, unknown>>(`${API_V1}/wishlist`, {
+      method: "POST",
+      token,
+      body: { productId: prodId },
+    });
+    return {
+      success: true,
+      message: (payload?.message as string) ?? "Added to wishlist",
+      data: payload,
+    };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return { success: false, message: err.message, status: err.status };
+    }
+    return {
+      success: false,
+      message: "فشل الاتصال بالسيرفر — حاول مرة أخرى",
+      status: 0,
+    };
   }
 }

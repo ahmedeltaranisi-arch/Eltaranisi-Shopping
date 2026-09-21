@@ -7,7 +7,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { schema } from "./../../schema/RegisterSchema";
 import * as zod from "zod";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { userRegister } from "@/app/actions/authActions";
 import { Eye, EyeOff } from "lucide-react";
@@ -49,8 +49,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center overflow-hidden">
-      <Toaster position="top-center" reverseOrder={false} />
-
       {/* w-full: الصفحة بتاخد العرض الكامل في الموبايل وبعدها max-w-screen-xl بس كحد أقصى */}
       <div className="w-full max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex flex-1">
         {/* القسم الأول: الفورم */}
@@ -65,6 +63,8 @@ export default function Register() {
               {/* أزرار التسجيل عبر جوجل وجيت هب */}
               <div className="flex flex-col items-center">
                 <button
+                  type="button"
+                  onClick={() => toast("Social sign-up is coming soon")}
                   className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline"
                 >
                   <div className="bg-white p-2 rounded-full">
@@ -91,6 +91,8 @@ export default function Register() {
                 </button>
 
                 <button
+                  type="button"
+                  onClick={() => toast("Social sign-up is coming soon")}
                   className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline mt-5"
                 >
                   <div className="bg-white p-1 rounded-full">

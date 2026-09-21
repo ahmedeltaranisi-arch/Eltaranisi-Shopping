@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { User } from "lucide-react";
 import ProfileSidebar from "@/app/_components/ProfileSidebar/ProfileSidebar";
-import AuthBridge from "../_components/AuthBridge/AuthBridge";
 
 const fontStyle = {
   fontFamily: "var(--font-exo), 'Exo', 'Exo Fallback', sans-serif",
@@ -15,7 +14,6 @@ export default function ProfileLayout({
 }) {
   return (
     <div className="min-h-screen bg-[#F6F7F5]" style={fontStyle}>
-      <AuthBridge />
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-br from-[#009B4D] via-[#1FB85A] to-[#38C25B] text-white py-8 px-4">
         <div className="container mx-auto px-3">

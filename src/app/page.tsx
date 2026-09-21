@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Slide from "../app/_components/Slider/Slider";
 import imag1 from "../assets/images/showroom.webp";
 import imag2 from "../assets/images/DALL·E-2024-11-26-12-52-36-A-blog-header-image-in-landscape-.jpeg";

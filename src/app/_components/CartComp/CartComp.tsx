@@ -4,66 +4,114 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import {
   ShoppingCart, Trash2, Minus, Plus, Tag, Lock,
   ShieldCheck, Truck, ArrowRight, ArrowLeft, Package, LogIn, RefreshCcw, Loader2,
 } from "lucide-react";
+import { apiFetchWithFallback, HttpError } from "@/lib/api-client";
 
-/* ① قراءة آمنة للـ response: نفحص ok قبل الـ JSON
-   عشان لو السيرفر رجّع HTML (صفحة خطأ) ماتضربش "Unexpected token '<'" */
-async function readResponse(response) {
+/* ------------------------------- الأنواع ------------------------------- */
+type CartProduct = {
+  _id?: string;
+  id?: string;
+  title?: string;
+  imageCover?: string;
+  images?: (string | { url?: string })[];
+  price?: number;
+  priceAfterDiscount?: number;
+  category?: { name?: string };
+  brand?: { name?: string };
+};
+
+type CartItem = {
+  _id?: string;
+  product?: CartProduct;
+  count?: number;
+  quantity?: number;
+  price?: number;
+};
+
+type CartPayload = {
+  message?: string;
+  numOfCartItems?: number;
+  data?: {
+    products?: CartItem[];
+    items?: CartItem[];
+    totalCartPrice?: number;
+  };
+  products?: CartItem[];
+  items?: CartItem[];
+  totalCartPrice?: number;
+};
+
+type ConfirmState =
+  | { kind: "single"; productId: string; title: string }
+  | { kind: "all" }
+  | null;
+
+/* ① قراءة السلة عن طريق /api/cart (التوكن بيتحط على السيرفر) */
+async function getCart(): Promise<CartPayload> {
+  const response = await fetch("/api/cart", { cache: "no-store" });
   const text = await response.text();
-  let body = null;
+  let body: CartPayload | null = null;
   try {
-    body = text ? JSON.parse(text) : null;
+    body = text ? (JSON.parse(text) as CartPayload) : null;
   } catch {
-    throw new Error(`السيرفر رجّع رد غير JSON (status: ${response.status})`);
+    throw new HttpError(
+      `السيرفر رجّع رد غير JSON (status: ${response.status})`,
+      response.status,
+    );
   }
   if (!response.ok) {
-    const err = new Error(body?.message || `فشل الطلب (status: ${response.status})`);
-    err.status = response.status; // عشان نعرف نتعامل مع 401
-    throw err;
+    throw new HttpError(
+      body?.message ?? `فشل الطلب (status: ${response.status})`,
+      response.status,
+    );
   }
-  return body;
-}
-
-/* ② جلب السلة */
-async function getCart() {
-  const response = await fetch("/api/cart", { cache: "no-store" });
-  return readResponse(response);
+  return body as CartPayload;
 }
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-/* 🔧 جرّب أكتر من شكل للـ endpoint لحد ما شكل ينجح:
-   الشكل الأساسي = زي RouteMisr v2 بالظبط (الـ productId في المسار)
-   ولو الـ route عندك مش دعم الشكل ده (404/405) → بينتقل للشكل الاحتياطي تلقائياً */
-async function fetchWithFallback(attempts) {
-  let lastError = null;
-  for (const attempt of attempts) {
-    const res = await fetch(attempt.url, attempt.options);
-    if (res.status === 404 || res.status === 405 || res.status === 401) {
-      lastError = new Error(`المسار ${attempt.url} مش مدعوم (status: ${res.status})`);
-      continue; // الشكل ده مش موجود → جرّب اللي بعده
-    }
-    return readResponse(res); // لو الرد !ok هترمي error عادي
+/* 🔧 بناء محاولات الطلب: v1 ثم v2 — كلها بتعدّي من البروكسي الآمن /api/ext */
+function attemptsFor(
+  method: string,
+  productId?: string,
+  body?: Record<string, unknown>,
+) {
+  const list: { path: string; options: RequestInit }[] = [];
+  for (const v of ["v1", "v2"]) {
+    list.push({
+      path: `${v}/cart${productId ? `/${productId}` : ""}`,
+      options: {
+        method,
+        headers: JSON_HEADERS,
+        body: body ? JSON.stringify(body) : undefined,
+      },
+    });
   }
-  throw lastError || new Error("فشل الطلب");
+  return list;
 }
 
 /* 🔧 استخراج الـ id بتاع المنتج من الـ item (بيتعامل مع كل الأشكال) */
-function getItemId(item) {
+function getItemId(item: CartItem): string {
   const p = item?.product && typeof item.product === "object" ? item.product : null;
-  return String(p?.id ?? p?._id ?? item?.product?._id ?? item?.productId ?? item?._id ?? "");
+  return String(
+    p?.id ?? p?._id ?? item?.product?._id ?? item?._id ?? "",
+  );
 }
 
 /* 🔧 تحديث الكمية داخل الكاش مباشرة (Optimistic Update)
    عشان الـ + والـ - والـ Total يغيروا فوراً من غير ما نستنى السيرفر */
-function patchCartCount(old, productId, newCount) {
+function patchCartCount(
+  old: CartPayload | undefined,
+  productId: string,
+  newCount: number,
+): CartPayload | undefined {
   if (!old) return old;
-  const clone = JSON.parse(JSON.stringify(old));
-  const arr = clone?.data?.products ?? clone?.data?.items ?? clone?.products ?? clone?.items;
+  const clone: CartPayload = JSON.parse(JSON.stringify(old));
+  const arr =
+    clone?.data?.products ?? clone?.data?.items ?? clone?.products ?? clone?.items;
   if (!Array.isArray(arr)) return old;
 
   const item = arr.find((x) => getItemId(x) === String(productId));
@@ -83,54 +131,8 @@ function patchCartCount(old, productId, newCount) {
 export default function CartComp() {
   const queryClient = useQueryClient();
 
-  /* 🆕 قراءة الـ token بتاع المستخدم من الـ session عشان نكلم RouteMisr مباشرة
-     (لأن الـ console ورّى إن /api/cart مش بيدعم PUT/DELETE — بيرجع 405) */
-  const { data: session } = useSession();
-  const userToken =
-    session?.accessToken ??
-    session?.user?.token ??
-    session?.user?.accessToken ??
-    session?.user?.jwt ??
-    null;
-  const V1 = "https://ecommerce.routemisr.com/api/v1";
-  const V2 = "https://ecommerce.routemisr.com/api/v2";
-
-  /* 🔧 يبني قائمة المحاولات بالترتيب:
-     1) مباشرة لـ RouteMisr بالـ token (v1 ثم v2) — زي الدوكيومنتيشن بالظبط
-     2) أشكال الـ proxy بتاعتك (/api/cart/{id} ثم /api/cart) */
-  function attemptsFor(method, productId, body) {
-    const list = [];
-    if (userToken) {
-      for (const base of [V1, V2]) {
-        list.push({
-          url: `${base}/cart${productId ? `/${productId}` : ""}`,
-          options: {
-            method,
-            headers: { "Content-Type": "application/json", token: userToken },
-            body: body ? JSON.stringify(body) : undefined,
-          },
-        });
-      }
-    }
-    if (productId) {
-      list.push({
-        url: `/api/cart/${productId}`,
-        options: { method, headers: JSON_HEADERS, body: body ? JSON.stringify(body) : undefined },
-      });
-    }
-    list.push({
-      url: "/api/cart",
-      options: {
-        method,
-        headers: JSON_HEADERS,
-        body: JSON.stringify(productId ? { productId, ...body } : {}),
-      },
-    });
-    return list;
-  }
-
   /* 🆕 حالة المودال: حذف منتج واحد {kind:"single"} أو حذف كل المنتجات {kind:"all"} */
-  const [confirm, setConfirm] = useState(null);
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   const { data: cartData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["getCart"],
@@ -140,19 +142,20 @@ export default function CartComp() {
 
   /* ③ تعديل الكمية — مع Optimistic Update عشان يكون ديناميكي ومتجاوب فوراً */
   const updateCount = useMutation({
-    mutationFn: (vars) => fetchWithFallback(attemptsFor("PUT", vars.productId, { count: vars.count })),
+    mutationFn: (vars: { productId: string; count: number }) =>
+      apiFetchWithFallback(attemptsFor("PUT", vars.productId, { count: vars.count })),
     // 🔑 حدّث الكاش فوراً قبل رد السيرفر
     onMutate: async (vars) => {
       await queryClient.cancelQueries({ queryKey: ["getCart"] });
       const previous = queryClient.getQueryData(["getCart"]);
-      queryClient.setQueryData(["getCart"], (old) =>
+      queryClient.setQueryData(["getCart"], (old: CartPayload | undefined) =>
         patchCartCount(old, vars.productId, vars.count)
       );
       return { previous };
     },
     // لو السيرفر رفض، نرجّع البيانات القديمة
     onError: (err, _vars, ctx) => {
-      console.error("فشل تعديل الكمية:", err); // افتح الـ console عشان تشوف الشكل اللي فشل
+      console.error("فشل تعديل الكمية:", err);
       if (ctx?.previous) queryClient.setQueryData(["getCart"], ctx.previous);
     },
     // وفي كل الأحوال نزامن مع السيرفر + الـ navbar بيتحدث لوحده (نفس الـ queryKey)
@@ -161,28 +164,27 @@ export default function CartComp() {
 
   /* ④ حذف منتج واحد — بتتنادى من زرار Remove جوّه المودال */
   const removeItem = useMutation({
-    mutationFn: (productId) => fetchWithFallback(attemptsFor("DELETE", productId)),
+    mutationFn: (productId: string) =>
+      apiFetchWithFallback(attemptsFor("DELETE", productId)),
     onError: (e) => console.error("فشل حذف المنتج:", e),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["getCart"] }),
   });
 
   /* 🆕 مسح السلة كلها */
   const clearAll = useMutation({
-    mutationFn: async (ids) => {
+    mutationFn: async (ids: string[]) => {
       // ✅ Clear User Cart: DELETE على /cart من غير body (v1 ثم v2)
-      if (userToken) {
-        try {
-          return await fetchWithFallback([
-            { url: `${V1}/cart`, options: { method: "DELETE", headers: { token: userToken } } },
-            { url: `${V2}/cart`, options: { method: "DELETE", headers: { token: userToken } } },
-          ]);
-        } catch (e) {
-          console.error("المسح الكلي المباشر فشل — هنمسح منتج منتج:", e);
-        }
+      try {
+        return await apiFetchWithFallback([
+          { path: "v1/cart", options: { method: "DELETE" } },
+          { path: "v2/cart", options: { method: "DELETE" } },
+        ]);
+      } catch (e) {
+        console.error("المسح الكلي المباشر فشل — هنمسح منتج منتج:", e);
       }
       // 🔄 احتياطي: حذف منتج منتج بكل الأشكال الممكنة
       await Promise.all(
-        ids.map((productId) => fetchWithFallback(attemptsFor("DELETE", productId)))
+        ids.map((productId) => apiFetchWithFallback(attemptsFor("DELETE", productId))),
       );
     },
     onError: (e) => console.error("فشل مسح السلة:", e),
@@ -192,7 +194,7 @@ export default function CartComp() {
   const modalPending = removeItem.isPending || clearAll.isPending;
 
   /* ⑤ لو مش مسجل دخول */
-  if (error?.status === 401) {
+  if (error instanceof HttpError && error.status === 401) {
     return (
       <div className="max-w-[1600px] mx-auto px-6 py-20 flex flex-col items-center text-center min-h-[50vh]">
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">

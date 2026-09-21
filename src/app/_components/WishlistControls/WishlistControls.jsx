@@ -59,17 +59,22 @@ function useWishlist(prodId) {
       );
       return { previous };
     },
-    onSuccess: (res) => {
-      if (res?.status === "success" || /wishlist/i.test(res?.message || "")) {
-        toast.success(res?.message || "Product added to your wishlist");
+    onSuccess: (res, _v, ctx) => {
+      if (res?.success) {
+        toast.success(res.message || "Product added to your wishlist");
       } else {
-        toast.error(res?.message || "Something went wrong");
+        // فشل من السيرفر — نرجّع الكاش القديم ونعرض السبب الحقيقي
+        if (ctx?.previous)
+          queryClient.setQueryData(["getWishlist"], ctx.previous);
+        if (res?.status === 401)
+          toast.error("Please log in to add items to your wishlist");
+        else toast.error(res?.message || "Something went wrong");
       }
     },
     onError: (e, _v, ctx) => {
       if (ctx?.previous)
         queryClient.setQueryData(["getWishlist"], ctx.previous);
-      toast.error("Please log in to add items to your wishlist");
+      toast.error(e?.message || "Something went wrong");
     },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: ["getWishlist"] }),
@@ -85,12 +90,21 @@ function useWishlist(prodId) {
       );
       return { previous };
     },
-    onSuccess: (res) =>
-      toast.success(res?.message || "Product removed from your wishlist"),
+    onSuccess: (res, _v, ctx) => {
+      if (res?.success) {
+        toast.success(res.message || "Product removed from your wishlist");
+      } else {
+        if (ctx?.previous)
+          queryClient.setQueryData(["getWishlist"], ctx.previous);
+        if (res?.status === 401)
+          toast.error("Please log in to manage your wishlist");
+        else toast.error(res?.message || "Something went wrong");
+      }
+    },
     onError: (e, _v, ctx) => {
       if (ctx?.previous)
         queryClient.setQueryData(["getWishlist"], ctx.previous);
-      toast.error("Please log in to manage your wishlist");
+      toast.error(e?.message || "Something went wrong");
     },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: ["getWishlist"] }),
@@ -110,7 +124,10 @@ function useWishlist(prodId) {
 }
 
 /* ❤️ القلب العائم في كروت المنتجات (Products / CardOne) */
-export function WishlistHeart({ prodId, className }) {
+export function WishlistHeart({
+  prodId,
+  className = "bg-white/80 p-2 rounded-full cursor-pointer shadow-md hover:bg-white transition-colors",
+}) {
   const { inWishlist, pending, toggle } = useWishlist(prodId);
 
   return (
@@ -122,10 +139,7 @@ export function WishlistHeart({ prodId, className }) {
         e.stopPropagation();
         toggle();
       }}
-      className={
-        className ??
-        "bg-white/80 p-2 rounded-full cursor-pointer shadow-md hover:bg-white transition-colors"
-      }
+      className={className}
     >
       {pending ? (
         <Loader2 className="w-4 h-4 text-red-500 animate-spin" />

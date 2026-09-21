@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Layers, ArrowRight } from "lucide-react";
-import { getCategories } from "@/app/services/categoriesService";
+import { getCategories } from "@/services/categories";
 
 /**
  * صفحة All Categories
@@ -73,7 +73,7 @@ export default async function CategoriesPage() {
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                   className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                  unoptimized
+                 
                 />
               </div>
 

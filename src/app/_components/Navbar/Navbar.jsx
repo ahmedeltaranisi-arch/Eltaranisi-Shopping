@@ -74,13 +74,7 @@ const profileLinks = [
     color: "hover:text-[#2eca65]",
   },
   {
-    href: "/profile/addresses",
-    label: "Addresses",
-    Icon: Contact,
-    color: "hover:text-[#2eca65]",
-  },
-  {
-    href: "/settings",
+    href: "/profile/settings",
     label: "Settings",
     Icon: Settings,
     color: "hover:text-[#2eca65]",
@@ -171,7 +165,7 @@ export default function Navbar() {
     signOut({ redirect: true, callbackUrl: "/Login" });
   }
 
-  const userName = session?.user?.name || "Ahmed";
+  const userName = session?.user?.name || "My Account";
 
   return (
     <header

@@ -1,8 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { prodType } from "@/app/interface/products";
-import { SubcategoryType } from "@/app/interface/categories";
+import { prodType } from "@/types/products";
+import { SubcategoryType } from "@/types/categories";
 import {
   Package,
   ShoppingCart,
@@ -20,13 +20,12 @@ import { WishlistHeart } from "@/app/_components/WishlistControls/WishlistContro
 import {
   getProducts,
   getAllProducts,
-  getCategories,
   getSubcategory,
   getCategory,
   getProductsByCategory,
   filterBySubcategory,
-} from "@/app/services/categoriesService";
-import { CategoryType } from "@/app/interface/categories";
+} from "@/services/categories";
+import { CategoryType } from "@/types/categories";
 
 type Props = {
   searchParams: Promise<{ subcategory?: string; category?: string }>;
@@ -91,7 +90,7 @@ function ProductCard({ product }: { product: prodType }) {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
               className="object-contain p-6"
-              unoptimized
+             
             />
           </div>
         </Link>
@@ -180,11 +179,8 @@ export default async function Products({ searchParams }: Props) {
 
   if (subcategoryId) {
     try {
-      // 1) نيجيب الـ subcategory + كل التصنيفات (عشان breadcrumb/الاسم)
-      const [sub, categories] = await Promise.all([
-        getSubcategory(subcategoryId),
-        getCategories(),
-      ]);
+      // 1) نيجيب الـ subcategory (عشان breadcrumb/الاسم)
+      const sub = await getSubcategory(subcategoryId);
       subcategory = sub;
       if (!sub) subcategory = null;
 
@@ -192,8 +188,9 @@ export default async function Products({ searchParams }: Props) {
       //    (المنتج في API فيه صفة subcategory → الفلترة دقيقة بالـ id)
       const allProducts = await getAllProducts();
       products = filterBySubcategory(allProducts, subcategoryId);
-    } catch (err: any) {
-      errorMsg = err?.message ?? "An unexpected error occurred";
+    } catch (err) {
+      errorMsg =
+        err instanceof Error ? err.message : "An unexpected error occurred";
     }
   } else if (categoryId) {
     // ---------- حالة filter على category (زي Music/Books — ملهاش subcategories) ----------
@@ -205,16 +202,19 @@ export default async function Products({ searchParams }: Props) {
       if (!cat) notFound(); // id غلط → 404
       category = cat;
       products = byCat;
-    } catch (err: any) {
-      if (err?.digest === "NEXT_NOT_FOUND") throw err;
-      errorMsg = err?.message ?? "An unexpected error occurred";
+    } catch (err) {
+      if (err instanceof Error && "digest" in err && err.digest === "NEXT_NOT_FOUND")
+        throw err;
+      errorMsg =
+        err instanceof Error ? err.message : "An unexpected error occurred";
     }
   } else {
     // ---------- الحالة العادية: All Products (زي الكود الأصلي) ----------
     try {
       products = await getProducts();
-    } catch (err: any) {
-      errorMsg = err?.message ?? "An unexpected error occurred";
+    } catch (err) {
+      errorMsg =
+        err instanceof Error ? err.message : "An unexpected error occurred";
     }
   }
 

@@ -1,12 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { schemaLogin } from "@/app/schema/LoginSchema";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
@@ -45,12 +46,14 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans overflow-hidden">
-      <Toaster position="top-center" reverseOrder={false} />
       <div className="max-w-[1200px] w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row">
         <div className="hidden md:flex flex-1 flex-col justify-center items-center p-12 bg-white">
-          <img
-            src="https://freshcart.codescandy.com/assets/images/svg-graphics/signin-g.svg"
+          <Image
+            src="/images/signin-g.svg"
             alt="Shopping Cart"
+            width={394}
+            height={394}
+            unoptimized
             className="w-full max-w-md object-contain mb-10"
           />
           <h2 className="text-[26px] font-bold text-[#1e293b] text-center mb-4">
@@ -122,7 +125,11 @@ export default function Login() {
             </div>
 
             <div className="space-y-4 mb-8">
-              <button className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 bg-white rounded-lg text-[15px] font-medium text-[#1e293b] hover:bg-gray-50 transition-colors shadow-sm">
+              <button
+                type="button"
+                onClick={() => toast("Social sign-in is coming soon")}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 bg-white rounded-lg text-[15px] font-medium text-[#1e293b] hover:bg-gray-50 transition-colors shadow-sm"
+              >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -143,7 +150,11 @@ export default function Login() {
                 </svg>
                 Continue with Google
               </button>
-              <button className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 bg-white rounded-lg text-[15px] font-medium text-[#1e293b] hover:bg-gray-50 transition-colors shadow-sm">
+              <button
+                type="button"
+                onClick={() => toast("Social sign-in is coming soon")}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 bg-white rounded-lg text-[15px] font-medium text-[#1e293b] hover:bg-gray-50 transition-colors shadow-sm"
+              >
                 <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>

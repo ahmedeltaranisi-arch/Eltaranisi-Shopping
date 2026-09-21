@@ -5,7 +5,7 @@ import { FolderOpen, FolderX, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   getCategory,
   getSubcategories,
-} from "@/app/services/categoriesService";
+} from "@/services/categories";
 
 type propsType = {
   params: Promise<{ id: string }>;
@@ -29,8 +29,8 @@ export default async function CategoryDetails({ params }: propsType) {
 
   try {
     subcategories = await getSubcategories(id);
-  } catch (err: any) {
-    errorMsg = err?.message ?? "حدث خطأ غير متوقع";
+  } catch (err) {
+    errorMsg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
   }
 
   const fontStyle = {
@@ -69,7 +69,7 @@ export default async function CategoryDetails({ params }: propsType) {
                 alt={category.name}
                 fill
                 className="object-cover"
-                unoptimized
+               
               />
             </div>
             <div>

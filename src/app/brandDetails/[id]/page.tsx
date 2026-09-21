@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { API_V1 } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -11,8 +12,8 @@ import {
   ShoppingCart,
   Package,
 } from "lucide-react";
-import { prodType } from "@/app/interface/products";
-import { brandType } from "@/services/types/brandType";
+import { prodType } from "@/types/products";
+import { brandType } from "@/types/brand";
 import AddBtn from "@/app/_components/AddBtn/AddBtn";
 import { WishlistHeart } from "@/app/_components/WishlistControls/WishlistControls";
 
@@ -23,7 +24,7 @@ type propsType = {
 // دالة جلب ماركة واحدة بالـ id (endpoint مخصوص للـ brand)
 async function getBrand(id: string): Promise<brandType | null> {
   const response = await fetch(
-    `https://ecommerce.routemisr.com/api/v1/brands/${id}`,
+    `${API_V1}/brands/${id}`,
   );
   if (!response.ok) return null;
   const payload = await response.json();
@@ -41,7 +42,7 @@ async function getAllProducts(): Promise<prodType[]> {
 
   while (hasMore) {
     const response = await fetch(
-      `https://ecommerce.routemisr.com/api/v1/products?page=${page}&limit=50`,
+      `${API_V1}/products?page=${page}&limit=50`,
       { next: { revalidate: 3600 } },
     );
     if (!response.ok) {
@@ -72,7 +73,7 @@ export default async function BrandDetails({ params }: propsType) {
     products = allProducts.filter(
       (p) => p.brand?._id === id || p.brand?.name === brand.name,
     );
-  } catch (err) {
+  } catch {
     products = [];
   }
 
@@ -113,7 +114,7 @@ export default async function BrandDetails({ params }: propsType) {
                 width={48}
                 height={48}
                 className="w-10 h-10 object-contain"
-                unoptimized
+               
               />
             </div>
             <div>
@@ -240,7 +241,7 @@ export default async function BrandDetails({ params }: propsType) {
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         className="object-contain p-6"
-                        unoptimized
+                       
                       />
                     </div>
                   </Link>

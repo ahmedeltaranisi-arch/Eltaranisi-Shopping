@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { API_V1 } from "@/lib/api";
 import Link from "next/link";
 
 /**
@@ -16,12 +17,11 @@ type CategoryType = {
   id?: string;
   name: string;
   image: string;
-  [key: string]: any;
 };
 
 async function getCategories(): Promise<CategoryType[] | null> {
   const response = await fetch(
-    "https://ecommerce.routemisr.com/api/v1/categories",
+    `${API_V1}/categories`,
     { next: { revalidate: 3600 } },
   );
   if (!response.ok) return null;
@@ -75,7 +75,7 @@ export default async function ShopCategories() {
                   alt={category.name}
                   fill
                   className="object-cover"
-                  unoptimized
+                 
                 />
               </div>
 

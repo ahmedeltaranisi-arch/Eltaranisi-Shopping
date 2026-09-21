@@ -1,36 +1,24 @@
 "use server";
+
 import { userData } from "../schema/RegisterSchema";
+import { API_V1, ApiError, serverFetch } from "@/lib/api";
 
-export async function userRegister(data: userData) {
+export type RegisterResult = {
+  success: boolean;
+  message: string;
+};
+
+export async function userRegister(data: userData): Promise<RegisterResult> {
   try {
-    const response = await fetch(
-      `https://ecommerce.routemisr.com/api/v1/auth/signup`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    const payload = await response.json();
-    console.log("payload", payload);
-
-    if (!response.ok) {
-      return {
-        success: false,
-        message: payload.message || "حدث خطأ غير معروف",
-      };
-    }
-
-    return { success: true, message: " Account created successfully  " };
+    await serverFetch<Record<string, unknown>>(`${API_V1}/auth/signup`, {
+      method: "POST",
+      body: data,
+    });
+    return { success: true, message: "Account created successfully" };
   } catch (error) {
-    console.log(error);
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message };
+    }
     return { success: false, message: "فشل الاتصال بالسيرفر" };
   }
 }
-
-// Login
-
-
